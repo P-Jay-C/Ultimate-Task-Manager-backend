@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,10 +21,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TaskService {
     private final TaskRepository taskRepository;
+    private final NotificationService notificationService;
 
     public Task save(Task task, User user) {
+
         task.setOwner(user);
-        return taskRepository.save(task);
+        Task savedTask =  taskRepository.save(task);
+        checkAndSendReminder(savedTask);
+        return savedTask;
     }
 
     public Task getTaskById(Long id){
@@ -73,7 +78,9 @@ public class TaskService {
         existingTask.setPriority(task.getPriority());
         existingTask.setCategory(task.getCategory());
         existingTask.setCompleted(task.isCompleted());
-        return taskRepository.save(existingTask);
+        Task updatedTask = taskRepository.save(existingTask);
+        checkAndSendReminder(updatedTask);
+        return updatedTask;
     }
 
     public void delete(Long id, User user) {
@@ -83,5 +90,15 @@ public class TaskService {
             throw new RuntimeException("Unauthorized to delete this task");
         }
         taskRepository.delete(task);
+    }
+
+    private void checkAndSendReminder(Task task) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime dueThreshold = now.plusHours(24);
+        if (!task.isCompleted() && task.getDueDate() != null &&
+                task.getDueDate().isAfter(now) && task.getDueDate().isBefore(dueThreshold)) {
+            notificationService.sendTaskReminderEmail(task);
+            notificationService.sendPushNotification(task);
+        }
     }
 }

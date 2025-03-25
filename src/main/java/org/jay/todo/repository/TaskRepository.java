@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
@@ -23,4 +24,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("completed") Boolean completed,
             @Param("search") String search,
             Pageable pageable);
+
+    @Query("SELECT t FROM Task t WHERE t.completed = false " +
+            "AND t.dueDate BETWEEN :now AND :dueThreshold")
+    List<Task> findTasksDueSoon(@Param("now") LocalDateTime now,
+                                @Param("dueThreshold") LocalDateTime dueThreshold);
+
+    Page<Task> findAll(Pageable pageable);
 }
