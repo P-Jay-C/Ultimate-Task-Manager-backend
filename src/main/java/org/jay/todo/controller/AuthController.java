@@ -1,9 +1,14 @@
 package org.jay.todo.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.jay.todo.dto.AuthResponseDTO;
 import org.jay.todo.entity.User;
+import org.jay.todo.exception.SuccessResponse;
 import org.jay.todo.service.AuthService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequestMapping("/api/auth")
@@ -12,12 +17,15 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public String register(@RequestBody User user) {
-        return authService.register(user);
+    public ResponseEntity<SuccessResponse> register(@RequestBody User user) {
+        AuthResponseDTO authResponse = authService.register(user);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new SuccessResponse(HttpStatus.CREATED.value(), "User registered successfully", authResponse));
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody User user) {
-        return authService.login(user);
+    public ResponseEntity<SuccessResponse> login(@RequestBody User user) {
+        AuthResponseDTO authResponse = authService.login(user);
+        return ResponseEntity.ok(new SuccessResponse(HttpStatus.OK.value(), "Login successful", authResponse));
     }
 }
