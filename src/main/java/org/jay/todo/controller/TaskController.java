@@ -1,5 +1,5 @@
-// TaskController.java
 package org.jay.todo.controller;
+import org.jay.todo.dto.PagedTaskResponseDTO;
 import org.jay.todo.entity.Task;
 import org.jay.todo.entity.User;
 import org.jay.todo.exception.SuccessResponse;
@@ -8,9 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/tasks")
 public class TaskController {
@@ -18,6 +15,15 @@ public class TaskController {
 
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
+    }
+
+    @GetMapping("/{taskId}")
+    public ResponseEntity<SuccessResponse> getTaskById(@PathVariable Long taskId){
+        return ResponseEntity.ok(
+                new SuccessResponse(HttpStatus.OK.value(),
+                        "Task retrieved successfully",
+                        taskService.getTaskById(taskId))
+        );
     }
 
     @PostMapping
@@ -28,9 +34,17 @@ public class TaskController {
     }
 
     @GetMapping
-    public ResponseEntity<SuccessResponse> getTasks(@AuthenticationPrincipal User user) {
-        List<Task> tasks = taskService.findByOwner(user);
-        return ResponseEntity.ok(new SuccessResponse(HttpStatus.OK.value(), "Tasks retrieved successfully", tasks));
+    public ResponseEntity<SuccessResponse> getTasks(
+            @AuthenticationPrincipal User user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Boolean completed,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "dueDate") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        PagedTaskResponseDTO responseDTO = taskService.findTasksByOwner(user, page, size, category, completed, search, sortBy, sortDir);
+        return ResponseEntity.ok(new SuccessResponse(HttpStatus.OK.value(), "Tasks retrieved successfully", responseDTO));
     }
 
     @PutMapping("/{id}")
