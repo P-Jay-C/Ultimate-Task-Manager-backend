@@ -6,6 +6,7 @@ import org.jay.todo.dto.TaskDTO;
 import org.jay.todo.entity.Task;
 import org.jay.todo.entity.User;
 import org.jay.todo.exception.ResourceNotFoundException;
+import org.jay.todo.mapper.TaskMapper;
 import org.jay.todo.repository.TaskRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,31 +15,26 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class TaskService {
     private final TaskRepository taskRepository;
     private final NotificationService notificationService;
+    private final TaskMapper taskMapper;
 
-    public Task save(Task task, User user) {
-
+    public TaskDTO save(TaskDTO taskDTO, User user) {
+        Task task = taskMapper.toTaskEntity(taskDTO);
         task.setOwner(user);
-        Task savedTask =  taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
         checkAndSendReminder(savedTask);
-        return savedTask;
+        return taskMapper.toTaskDTO(savedTask);
     }
 
-    public Task getTaskById(Long id){
-        return taskRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("Task not found : "+ id)
-        );
-    }
-
-    public List<Task> findByOwner(User owner) {
-        return taskRepository.findByOwner(owner);
+    public TaskDTO getTaskById(Long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + id));
+        return taskMapper.toTaskDTO(task);
     }
 
     public PagedTaskResponseDTO findTasksByOwner(User owner, int page, int size, String category, Boolean completed, String search, String sortBy, String sortDir) {
@@ -46,41 +42,24 @@ public class TaskService {
                 sortBy != null ? sortBy : "dueDate");
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Task> taskPage = taskRepository.findTasksByOwnerWithFiltersAndSearch(owner, category, completed, search, pageable);
-
-        return PagedTaskResponseDTO.builder()
-                .content(taskPage.getContent().stream()
-                        .map(task -> TaskDTO.builder()
-                                .id(task.getId())
-                                .title(task.getTitle())
-                                .description(task.getDescription())
-                                .dueDate(task.getDueDate().toString())
-                                .priority(task.getPriority())
-                                .category(task.getCategory())
-                                .completed(task.isCompleted())
-                                .build())
-                        .collect(Collectors.toList()))
-                .page(taskPage.getNumber())
-                .size(taskPage.getSize())
-                .totalElements(taskPage.getTotalElements())
-                .totalPages(taskPage.getTotalPages())
-                .build();
+        return taskMapper.toPagedTaskResponseDTO(taskPage);
     }
 
-    public Task update(Long id, Task task, User user) {
+    public TaskDTO update(Long id, TaskDTO taskDTO, User user) {
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
         if (!existingTask.getOwner().equals(user)) {
             throw new RuntimeException("Unauthorized to update this task");
         }
-        existingTask.setTitle(task.getTitle());
-        existingTask.setDescription(task.getDescription());
-        existingTask.setDueDate(task.getDueDate());
-        existingTask.setPriority(task.getPriority());
-        existingTask.setCategory(task.getCategory());
-        existingTask.setCompleted(task.isCompleted());
+        existingTask.setTitle(taskDTO.getTitle());
+        existingTask.setDescription(taskDTO.getDescription());
+        existingTask.setDueDate(taskDTO.getDueDate() != null ? LocalDateTime.parse(taskDTO.getDueDate()) : null);
+        existingTask.setPriority(taskDTO.getPriority());
+        existingTask.setCategory(taskDTO.getCategory());
+        existingTask.setCompleted(taskDTO.isCompleted());
         Task updatedTask = taskRepository.save(existingTask);
         checkAndSendReminder(updatedTask);
-        return updatedTask;
+        return taskMapper.toTaskDTO(updatedTask);
     }
 
     public void delete(Long id, User user) {

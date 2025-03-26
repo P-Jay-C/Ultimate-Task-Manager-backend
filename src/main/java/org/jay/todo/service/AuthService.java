@@ -3,8 +3,11 @@ package org.jay.todo.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jay.todo.dto.AuthResponseDTO;
+import org.jay.todo.dto.LoginRequest;
+import org.jay.todo.dto.RegistrationRequest;
 import org.jay.todo.entity.Role;
 import org.jay.todo.entity.User;
+import org.jay.todo.mapper.UserMapper;
 import org.jay.todo.repository.RoleRepository;
 import org.jay.todo.repository.UserRepository;
 import org.jay.todo.util.JwtUtil;
@@ -16,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +29,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final UserMapper userMapper;
 
     @PostConstruct
     public void initRoles() {
@@ -42,40 +45,26 @@ public class AuthService {
         }
     }
 
-    public AuthResponseDTO register(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        Role userRole = roleRepository.findByName("USER")
-                .orElseThrow(() -> new RuntimeException("USER role not found"));
-        log.info("Role before setting: " + userRole); // Debug
-        user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
-        User savedUser = userRepository.save(user);
+    public AuthResponseDTO register(RegistrationRequest registrationRequest) {
+        User user = userMapper.toUserEntity(registrationRequest);
+        user.setPassword(passwordEncoder.encode(registrationRequest.getPassword()));
 
-        return AuthResponseDTO.builder()
-                .id(savedUser.getId())
-                .username(savedUser.getUsername())
-                .email(savedUser.getEmail())
-                .token(jwtUtil.generateToken(savedUser))
-                .roles(savedUser.getRoles().stream()
-                        .map(Role::getName)
-                        .collect(Collectors.toSet()))
-                .build();
+        Role role = roleRepository.findByName(registrationRequest.getRole() != null ? registrationRequest.getRole() : "USER")
+                .orElseThrow(() -> new RuntimeException("Role not found: " + registrationRequest.getRole()));
+        user.setRoles(new HashSet<>(Collections.singletonList(role)));
+
+        User savedUser = userRepository.save(user);
+        String token = jwtUtil.generateToken(savedUser);
+        return userMapper.toAuthResponseDTO(savedUser, token);
     }
 
-    public AuthResponseDTO login(User user) {
-        User existingUser = userRepository.findByUsername(user.getUsername())
+    public AuthResponseDTO login(LoginRequest request) {
+        User existingUser = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        if (!passwordEncoder.matches(user.getPassword(), existingUser.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), existingUser.getPassword())) {
             throw new AuthenticationException("Invalid credentials") {};
         }
-
-        return AuthResponseDTO.builder()
-                .id(existingUser.getId())
-                .username(existingUser.getUsername())
-                .email(existingUser.getEmail())
-                .token(jwtUtil.generateToken(existingUser))
-                .roles(existingUser.getRoles().stream()
-                        .map(Role::getName)
-                        .collect(Collectors.toSet()))
-                .build();
+        String token = jwtUtil.generateToken(existingUser);
+        return userMapper.toAuthResponseDTO(existingUser, token);
     }
 }

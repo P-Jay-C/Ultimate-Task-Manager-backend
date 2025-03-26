@@ -17,4 +17,7 @@ public class TaskDTO {
     private String priority;
     private String category;
     private boolean completed;
+    private String updatedAt;
+    private String createdAt;
+    private String userId;
 }
