@@ -14,19 +14,23 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class TaskService {
     private final TaskRepository taskRepository;
     private final NotificationService notificationService;
     private final TaskMapper taskMapper;
+    private final TagService tagService;
 
     public TaskDTO save(TaskDTO taskDTO, User user) {
         Task task = taskMapper.toTaskEntity(taskDTO);
         task.setOwner(user);
+        task = tagService.setTags(task, taskDTO.getTags());
         Task savedTask = taskRepository.save(task);
         checkAndSendReminder(savedTask);
         return taskMapper.toTaskDTO(savedTask);
@@ -58,6 +62,8 @@ public class TaskService {
         existingTask.setPriority(taskDTO.getPriority());
         existingTask.setCategory(taskDTO.getCategory());
         existingTask.setCompleted(taskDTO.isCompleted());
+
+        existingTask = tagService.setTags(existingTask,taskDTO.getTags());
         Task updatedTask = taskRepository.save(existingTask);
         checkAndSendReminder(updatedTask);
         return taskMapper.toTaskDTO(updatedTask);

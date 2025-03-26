@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -20,4 +22,5 @@ public class TaskDTO {
     private String updatedAt;
     private String createdAt;
     private String userId;
+    private Set<String> tags;
 }

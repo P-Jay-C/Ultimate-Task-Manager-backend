@@ -2,6 +2,7 @@ package org.jay.todo.mapper;
 
 import org.jay.todo.dto.PagedTaskResponseDTO;
 import org.jay.todo.dto.TaskDTO;
+import org.jay.todo.entity.Tag;
 import org.jay.todo.entity.Task;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,7 @@ public class TaskMapper {
                 .updatedAt(task.getUpdatedAt() != null ? task.getUpdatedAt().toString() : null)
                 .createdAt(task.getCreatedAt() != null ? task.getCreatedAt().toString() : null)
                 .userId(task.getOwner() != null ? task.getOwner().getId().toString() : null)
+                .tags(task.getTags().stream().map(Tag::getName).collect(Collectors.toSet()))
                 .build();
     }
 

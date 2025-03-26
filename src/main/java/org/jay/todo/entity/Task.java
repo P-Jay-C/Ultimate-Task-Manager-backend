@@ -9,6 +9,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Getter
@@ -32,6 +34,14 @@ public class Task {
     @JoinColumn(name = "user_id")
     @JsonIgnoreProperties({"tasks", "roles", "password"})
     private User owner;
+
+    @ManyToMany
+    @JoinTable(
+            name = "task_tags",
+            joinColumns = @JoinColumn(name = "task_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
 
     @Override
     public boolean equals(Object o) {

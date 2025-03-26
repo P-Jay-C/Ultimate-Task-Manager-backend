@@ -39,6 +39,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/tasks/**").hasAnyAuthority("ADMIN", "USER")
+                        .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfoEndpointConfig ->
