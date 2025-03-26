@@ -3,7 +3,6 @@ package org.jay.todo.security;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jay.todo.entity.User;
-import org.jay.todo.service.CustomUserDetailsService;
 import org.jay.todo.util.JwtUtil;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;

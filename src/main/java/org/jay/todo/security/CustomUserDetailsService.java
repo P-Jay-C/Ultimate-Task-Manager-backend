@@ -1,4 +1,4 @@
-package org.jay.todo.service;
+package org.jay.todo.security;
 
 import lombok.RequiredArgsConstructor;
 import org.jay.todo.repository.UserRepository;
