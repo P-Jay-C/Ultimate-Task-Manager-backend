@@ -6,6 +6,7 @@ import org.jay.todo.dto.TaskDTO;
 import org.jay.todo.entity.Task;
 import org.jay.todo.entity.User;
 import org.jay.todo.exception.ResourceNotFoundException;
+import org.jay.todo.exception.UnauthorizedException;
 import org.jay.todo.mapper.TaskMapper;
 import org.jay.todo.repository.TaskRepository;
 import org.springframework.data.domain.Page;
@@ -49,7 +50,7 @@ public class TaskService {
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
         if (!existingTask.getOwner().equals(user)) {
-            throw new RuntimeException("Unauthorized to update this task");
+            throw new UnauthorizedException("Unauthorized to update this task");
         }
         existingTask.setTitle(taskDTO.getTitle());
         existingTask.setDescription(taskDTO.getDescription());
@@ -66,7 +67,7 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
         if (!task.getOwner().equals(user)) {
-            throw new RuntimeException("Unauthorized to delete this task");
+            throw new UnauthorizedException("Unauthorized to delete this task");
         }
         taskRepository.delete(task);
     }
