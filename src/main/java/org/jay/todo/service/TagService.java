@@ -24,7 +24,7 @@ public class TagService {
                             .orElseGet(() -> {
                                 Tag newTag = new Tag();
                                 newTag.setName(name);
-                                // Optional: Set default color or from client (e.g., newTag.setColor("#FFFFFF"))
+                                newTag.setColor("#FFFFFF");
                                 return tagRepository.save(newTag);
                             }))
                     .collect(Collectors.toSet());

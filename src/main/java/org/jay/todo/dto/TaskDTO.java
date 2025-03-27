@@ -23,4 +23,6 @@ public class TaskDTO {
     private String createdAt;
     private String userId;
     private Set<String> tags;
+    private String status; // PENDING, IN_PROGRESS, COMPLETED, ARCHIVED
+    private int progress; // 0-100
 }

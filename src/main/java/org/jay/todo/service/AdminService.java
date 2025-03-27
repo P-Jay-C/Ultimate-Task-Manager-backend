@@ -7,6 +7,7 @@ import org.jay.todo.dto.TaskDTO;
 import org.jay.todo.dto.UserDTO;
 import org.jay.todo.entity.Task;
 import org.jay.todo.entity.User;
+import org.jay.todo.enums.TaskStatus;
 import org.jay.todo.mapper.TaskMapper;
 import org.jay.todo.mapper.UserMapper;
 import org.jay.todo.repository.TaskRepository;
@@ -70,6 +71,7 @@ public class AdminService {
     }
 
     public TaskDTO createTask(TaskDTO taskDTO) {
+        validateProgress(taskDTO.getProgress());
         User owner = userRepository.findById(Long.parseLong(taskDTO.getUserId()))
                 .orElseThrow(() -> new RuntimeException("User not found for task owner"));
         Task task = taskMapper.toTaskEntity(taskDTO);
@@ -80,6 +82,7 @@ public class AdminService {
     }
 
     public TaskDTO updateTask(Long id, TaskDTO taskDTO) {
+        validateProgress(taskDTO.getProgress());
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
         existingTask.setTitle(taskDTO.getTitle());
@@ -88,6 +91,14 @@ public class AdminService {
         existingTask.setPriority(taskDTO.getPriority());
         existingTask.setCategory(taskDTO.getCategory());
         existingTask.setCompleted(taskDTO.isCompleted());
+        if (taskDTO.getStatus() != null) {
+            TaskStatus newStatus = TaskStatus.valueOf(taskDTO.getStatus());
+            existingTask.setStatus(newStatus);
+            if (newStatus == TaskStatus.COMPLETED) {
+                existingTask.setProgress(100);
+            }
+        }
+        existingTask.setProgress(taskDTO.getProgress());
         if (taskDTO.getUserId() != null) {
             User owner = userRepository.findById(Long.parseLong(taskDTO.getUserId()))
                     .orElseThrow(() -> new RuntimeException("User not found for task owner"));
@@ -102,5 +113,11 @@ public class AdminService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
         taskRepository.delete(task);
+    }
+
+    private void validateProgress(int progress) {
+        if (progress < 0 || progress > 100) {
+            throw new IllegalArgumentException("Progress must be between 0 and 100");
+        }
     }
 }

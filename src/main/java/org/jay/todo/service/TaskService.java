@@ -5,6 +5,7 @@ import org.jay.todo.dto.PagedTaskResponseDTO;
 import org.jay.todo.dto.TaskDTO;
 import org.jay.todo.entity.Task;
 import org.jay.todo.entity.User;
+import org.jay.todo.enums.TaskStatus;
 import org.jay.todo.exception.ResourceNotFoundException;
 import org.jay.todo.exception.UnauthorizedException;
 import org.jay.todo.mapper.TaskMapper;
@@ -28,6 +29,7 @@ public class TaskService {
     private final TagService tagService;
 
     public TaskDTO save(TaskDTO taskDTO, User user) {
+        validateProgress(taskDTO.getProgress());
         Task task = taskMapper.toTaskEntity(taskDTO);
         task.setOwner(user);
         task = tagService.setTags(task, taskDTO.getTags());
@@ -42,7 +44,8 @@ public class TaskService {
         return taskMapper.toTaskDTO(task);
     }
 
-    public PagedTaskResponseDTO findTasksByOwner(User owner, int page, int size, String category, Boolean completed, String search, String sortBy, String sortDir) {
+    public PagedTaskResponseDTO findTasksByOwner(User owner, int page, int size, String category, Boolean completed,
+                                                 String search, String sortBy, String sortDir) {
         Sort sort = Sort.by(sortDir != null && sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC,
                 sortBy != null ? sortBy : "dueDate");
         Pageable pageable = PageRequest.of(page, size, sort);
@@ -51,6 +54,7 @@ public class TaskService {
     }
 
     public TaskDTO update(Long id, TaskDTO taskDTO, User user) {
+        validateProgress(taskDTO.getProgress());
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
         if (!existingTask.getOwner().equals(user)) {
@@ -62,8 +66,15 @@ public class TaskService {
         existingTask.setPriority(taskDTO.getPriority());
         existingTask.setCategory(taskDTO.getCategory());
         existingTask.setCompleted(taskDTO.isCompleted());
-
-        existingTask = tagService.setTags(existingTask,taskDTO.getTags());
+        if (taskDTO.getStatus() != null) {
+            TaskStatus newStatus = TaskStatus.valueOf(taskDTO.getStatus());
+            existingTask.setStatus(newStatus);
+            if (newStatus == TaskStatus.COMPLETED) {
+                existingTask.setProgress(100);
+            }
+        }
+        existingTask.setProgress(taskDTO.getProgress());
+        existingTask = tagService.setTags(existingTask, taskDTO.getTags());
         Task updatedTask = taskRepository.save(existingTask);
         checkAndSendReminder(updatedTask);
         return taskMapper.toTaskDTO(updatedTask);
@@ -85,6 +96,12 @@ public class TaskService {
                 task.getDueDate().isAfter(now) && task.getDueDate().isBefore(dueThreshold)) {
             notificationService.sendTaskReminderEmail(task);
             notificationService.sendPushNotification(task);
+        }
+    }
+
+    private void validateProgress(int progress) {
+        if (progress < 0 || progress > 100) {
+            throw new IllegalArgumentException("Progress must be between 0 and 100");
         }
     }
 }

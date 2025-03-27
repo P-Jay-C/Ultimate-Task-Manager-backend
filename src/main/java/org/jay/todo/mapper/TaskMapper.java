@@ -4,6 +4,7 @@ import org.jay.todo.dto.PagedTaskResponseDTO;
 import org.jay.todo.dto.TaskDTO;
 import org.jay.todo.entity.Tag;
 import org.jay.todo.entity.Task;
+import org.jay.todo.enums.TaskStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +31,8 @@ public class TaskMapper {
                 .createdAt(task.getCreatedAt() != null ? task.getCreatedAt().toString() : null)
                 .userId(task.getOwner() != null ? task.getOwner().getId().toString() : null)
                 .tags(task.getTags().stream().map(Tag::getName).collect(Collectors.toSet()))
+                .status(task.getStatus().name())
+                .progress(task.getProgress())
                 .build();
     }
 
@@ -44,7 +47,11 @@ public class TaskMapper {
         task.setPriority(taskDTO.getPriority());
         task.setCategory(taskDTO.getCategory());
         task.setCompleted(taskDTO.isCompleted());
-        return task;
+        if (taskDTO.getStatus() != null) {
+            task.setStatus(TaskStatus.valueOf(taskDTO.getStatus()));
+        }
+        task.setProgress(taskDTO.getProgress());
+        return task; // Tags handled in TagService
     }
 
     public PagedTaskResponseDTO toPagedTaskResponseDTO(Page<Task> taskPage) {

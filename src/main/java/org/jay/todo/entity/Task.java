@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.jay.todo.enums.TaskStatus;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -30,6 +31,11 @@ public class Task {
     private LocalDateTime createdAt;
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "varchar(255) default 'PENDING'")
+    private TaskStatus status = TaskStatus.PENDING; // Default to PENDING
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    private int progress = 0; // 0-100, default to 0
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @JsonIgnoreProperties({"tasks", "roles", "password"})
