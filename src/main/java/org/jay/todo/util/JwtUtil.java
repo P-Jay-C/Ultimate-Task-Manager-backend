@@ -18,13 +18,13 @@ public class JwtUtil {
     private String secret;
 
     public String generateToken(User user) {
-        long expirationTime = 86400000; // 24 hours in milliseconds
+        long expirationTime = 86400000; // 24 hours
         return Jwts.builder()
-                .subject(user.getUsername())
+                .subject(user.getEmail())
                 .id(String.valueOf(user.getId()))
                 .issuer("UltimateToDo")
+                .claim("username", user.getUsername())
                 .claim("roles", user.getRoles().stream().map(Role::getName).toList())
-                .claim("email", user.getEmail())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes()), Jwts.SIG.HS512)
@@ -32,35 +32,17 @@ public class JwtUtil {
     }
 
     public String generateRefreshToken(User user) {
-        long refreshExpirationTime = 604800000; // 7 days in milliseconds
+        long refreshExpirationTime = 604800000; // 7 days
         return Jwts.builder()
-                .subject(user.getUsername())
+                .subject(user.getEmail())
                 .id(String.valueOf(user.getId()))
                 .issuer("UltimateToDo")
-                .claim("type", "refresh") // Indicate this is a refresh token
+                .claim("type", "refresh")
+                .claim("username", user.getUsername())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + refreshExpirationTime))
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes()), Jwts.SIG.HS512)
                 .compact();
-    }
-
-    public String extractUsername(String token) {
-        return Jwts.parser()
-                .verifyWith(Keys.hmacShaKeyFor(secret.getBytes()))
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
-    }
-
-    public Long extractUserId(String token) {
-        String id = Jwts.parser()
-                .verifyWith(Keys.hmacShaKeyFor(secret.getBytes()))
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getId();
-        return id != null ? Long.valueOf(id) : null;
     }
 
     public String extractEmail(String token) {
@@ -69,7 +51,16 @@ public class JwtUtil {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .get("email", String.class);
+                .getSubject();
+    }
+
+    public String extractUsername(String token) {
+        return Jwts.parser()
+                .verifyWith(Keys.hmacShaKeyFor(secret.getBytes()))
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("username", String.class);
     }
 
     @SuppressWarnings("unchecked")

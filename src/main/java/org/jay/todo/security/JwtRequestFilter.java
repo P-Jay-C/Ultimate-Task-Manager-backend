@@ -28,22 +28,22 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         final String authorizationHeader = request.getHeader("Authorization");
 
-        String username = null;
+        String email = null;
         String jwt = null;
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
             try {
-                username = jwtUtil.extractUsername(jwt);
+                email = jwtUtil.extractEmail(jwt);
             } catch (Exception e) {
                 log.warn("JWT parsing error: {}", e.getMessage());
             }
         }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User userDetails = (User) userDetailsService.loadUserByUsername(username);
+        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            User userDetails = (User) userDetailsService.loadUserByUsername(email);
             if (jwtUtil.validateToken(jwt)) {
-                log.info("Token is valid for user: {}", username);
+                log.info("Token is valid for user: {}", email);
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
@@ -51,9 +51,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-                log.info("Authentication set for user: {}", userDetails.getUsername());
+                log.info("Authentication set for user: {}", userDetails.getEmail());
             } else {
-                log.warn("Token validation failed for user: {}", username);
+                log.warn("Token validation failed for user: {}", email);
             }
         } else {
             log.debug("No valid JWT token found or authentication already set");

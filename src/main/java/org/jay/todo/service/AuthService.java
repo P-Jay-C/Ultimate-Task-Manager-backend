@@ -1,5 +1,6 @@
 package org.jay.todo.service;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jay.todo.dto.AuthResponseDTO;
@@ -68,7 +69,7 @@ public class AuthService {
     }
 
     public AuthResponseDTO login(LoginRequest request) {
-        User existingUser = userRepository.findByUsername(request.getUsername())
+        User existingUser = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         if (!passwordEncoder.matches(request.getPassword(), existingUser.getPassword())) {
             throw new AuthenticationException("Invalid credentials") {};
@@ -87,10 +88,10 @@ public class AuthService {
 
     public AuthResponseDTO refreshToken(String refreshToken) {
         if (!jwtUtil.validateToken(refreshToken) || !jwtUtil.isRefreshToken(refreshToken)) {
-            throw new RuntimeException("Invalid or expired refresh token");
+            throw new ExpiredJwtException(null, null, "Invalid or expired refresh token");
         }
-        String username = jwtUtil.extractUsername(refreshToken);
-        User user = userRepository.findByUsername(username)
+        String username = jwtUtil.extractEmail(refreshToken);
+        User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         String newToken = jwtUtil.generateToken(user);
         String newRefreshToken = jwtUtil.generateRefreshToken(user); // Optionally renew refresh token
