@@ -1,5 +1,6 @@
 package org.jay.todo.exception;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -66,6 +67,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex, HttpServletRequest request) {
         return buildErrorResponse(ex, HttpStatus.INTERNAL_SERVER_ERROR, request);
+    }
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<ErrorResponse> handleExpiredJwtException(ExpiredJwtException ex, HttpServletRequest request) {
+        return buildErrorResponse(ex, HttpStatus.UNAUTHORIZED, request);
     }
 
     @ExceptionHandler(Exception.class)

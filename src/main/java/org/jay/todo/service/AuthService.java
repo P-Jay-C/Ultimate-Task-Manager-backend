@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +56,15 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
         String token = jwtUtil.generateToken(savedUser);
-        return userMapper.toAuthResponseDTO(savedUser, token);
+        String refreshToken = jwtUtil.generateRefreshToken(savedUser);
+        return AuthResponseDTO.builder()
+                .id(savedUser.getId())
+                .username(savedUser.getUsername())
+                .email(savedUser.getEmail())
+                .token(token)
+                .refreshToken(refreshToken)
+                .roles(savedUser.getRoles().stream().map(Role::getName).collect(Collectors.toSet()))
+                .build();
     }
 
     public AuthResponseDTO login(LoginRequest request) {
@@ -65,6 +74,33 @@ public class AuthService {
             throw new AuthenticationException("Invalid credentials") {};
         }
         String token = jwtUtil.generateToken(existingUser);
-        return userMapper.toAuthResponseDTO(existingUser, token);
+        String refreshToken = jwtUtil.generateRefreshToken(existingUser);
+        return AuthResponseDTO.builder()
+                .id(existingUser.getId())
+                .username(existingUser.getUsername())
+                .email(existingUser.getEmail())
+                .token(token)
+                .refreshToken(refreshToken)
+                .roles(existingUser.getRoles().stream().map(Role::getName).collect(Collectors.toSet()))
+                .build();
+    }
+
+    public AuthResponseDTO refreshToken(String refreshToken) {
+        if (!jwtUtil.validateToken(refreshToken) || !jwtUtil.isRefreshToken(refreshToken)) {
+            throw new RuntimeException("Invalid or expired refresh token");
+        }
+        String username = jwtUtil.extractUsername(refreshToken);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        String newToken = jwtUtil.generateToken(user);
+        String newRefreshToken = jwtUtil.generateRefreshToken(user); // Optionally renew refresh token
+        return AuthResponseDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .token(newToken)
+                .refreshToken(newRefreshToken)
+                .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()))
+                .build();
     }
 }
