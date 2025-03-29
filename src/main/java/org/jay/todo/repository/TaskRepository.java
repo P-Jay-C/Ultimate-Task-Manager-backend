@@ -2,6 +2,7 @@ package org.jay.todo.repository;
 
 import org.jay.todo.entity.Task;
 import org.jay.todo.entity.User;
+import org.jay.todo.enums.TaskStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +32,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                                 @Param("dueThreshold") LocalDateTime dueThreshold);
 
     Page<Task> findAll(Pageable pageable);
+
+    Page<Task> findByOwnerAndStatus(User owner, TaskStatus status, Pageable pageable);
+
+    Page<Task> findByOwnerAndStatusAndCategory(User owner, TaskStatus status, String category, Pageable pageable);
+    Page<Task> findByOwnerAndStatusAndTitleContaining(User owner, TaskStatus status, String search, Pageable pageable);
+    Page<Task> findByOwnerAndStatusAndCategoryContainingAndTitleContaining(
+            User owner, TaskStatus status, String category, String search, Pageable pageable);
 }

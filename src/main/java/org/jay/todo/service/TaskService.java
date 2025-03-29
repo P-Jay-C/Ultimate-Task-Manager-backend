@@ -53,6 +53,23 @@ public class TaskService {
         return taskMapper.toPagedTaskResponseDTO(taskPage);
     }
 
+    public PagedTaskResponseDTO findTasksByOwnerAndStatus(User owner, TaskStatus status, int page, int size, String category, String search) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Task> taskPage;
+
+        if (category != null && search != null) {
+            taskPage = taskRepository.findByOwnerAndStatusAndCategoryContainingAndTitleContaining(owner, status, category, search, pageable);
+        } else if (category != null) {
+            taskPage = taskRepository.findByOwnerAndStatusAndCategory(owner, status, category, pageable);
+        } else if (search != null) {
+            taskPage = taskRepository.findByOwnerAndStatusAndTitleContaining(owner, status, search, pageable);
+        } else {
+            taskPage = taskRepository.findByOwnerAndStatus(owner, status, pageable);
+        }
+
+        return taskMapper.toPagedTaskResponseDTO(taskPage);
+    }
+
     public TaskDTO update(Long id, TaskDTO taskDTO, User user) {
         validateProgress(taskDTO.getProgress());
         Task existingTask = taskRepository.findById(id)
