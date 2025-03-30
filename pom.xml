@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.jay</groupId>
-    <artifactId>Todo</artifactId>
+    <artifactId>task-manager</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Todo</name>
-    <description>Todo</description>
+    <name>task-manager</name>
+    <description>Task manager</description>
     <url/>
     <licenses>
         <license/>
